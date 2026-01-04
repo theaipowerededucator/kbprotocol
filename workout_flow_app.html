@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KB Protocol: A1C Crusher (Heavy)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; -webkit-tap-highlight-color: transparent; }
+        .set-circle { transition: all 0.2s; }
+        .set-circle.active { background-color: #3b82f6; border-color: #3b82f6; color: white; transform: scale(1.1); }
+        .progress-bar { transition: width 0.3s ease-in-out; }
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .glass-panel { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .weight-badge { background-color: #1f2937; border: 1px solid #374151; color: #fbbf24; font-weight: bold; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- App Header -->
+    <header class="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center z-10 shadow-lg">
+        <div>
+            <h1 class="text-xl font-bold text-white tracking-tight">KB PROTOCOL <span class="text-yellow-500 text-sm">PRO</span></h1>
+            <p class="text-xs text-gray-400">Inventory: 20lb, 31lb, 40lb</p>
+        </div>
+        <button onclick="resetProgress()" class="text-gray-500 hover:text-red-400 transition">
+            <i class="fa-solid fa-rotate-right"></i>
+        </button>
+    </header>
+
+    <!-- Workout Selector (Tabs) -->
+    <div class="flex border-b border-gray-800 bg-gray-900/50">
+        <button id="tab-A" onclick="switchWorkout('A')" class="flex-1 py-3 text-center text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-white transition">
+            Workout A: Push & Squat
+        </button>
+        <button id="tab-B" onclick="switchWorkout('B')" class="flex-1 py-3 text-center text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-white transition">
+            Workout B: Pull & Hinge
+        </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="workout-container" class="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+        <!-- Content injected by JS -->
+    </main>
+
+    <!-- Floating Timer & Finish Bar -->
+    <div class="absolute bottom-0 w-full glass-panel p-4 border-t border-gray-700 flex items-center justify-between gap-4 z-20">
+        <!-- Timer Button -->
+        <button onclick="toggleTimerModal()" class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-3 rounded-xl border border-gray-700 shadow-lg transition active:scale-95">
+            <i class="fa-solid fa-stopwatch text-blue-400"></i>
+            <span id="mini-timer-display" class="font-mono font-bold">Rest</span>
+        </button>
+        
+        <!-- Complete Button -->
+        <button onclick="finishWorkout()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-900/20 transition active:scale-95 flex justify-center items-center gap-2">
+            Finish Workout <i class="fa-solid fa-check"></i>
+        </button>
+    </div>
+
+    <!-- Full Screen Timer Modal (Hidden by default) -->
+    <div id="timer-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col justify-center items-center backdrop-blur-sm">
+        <div class="text-7xl font-mono font-bold text-blue-500 mb-8" id="main-timer">00:00</div>
+        
+        <div class="flex gap-4 mb-8">
+            <button onclick="setTimer(60)" class="px-4 py-2 bg-gray-800 rounded-lg text-sm border border-gray-700">60s</button>
+            <button onclick="setTimer(90)" class="px-4 py-2 bg-gray-800 rounded-lg text-sm border border-gray-700">90s</button>
+            <button onclick="setTimer(120)" class="px-4 py-2 bg-gray-800 rounded-lg text-sm border border-gray-700">2m</button>
+        </div>
+
+        <div class="flex gap-6">
+            <button onclick="startTimer()" class="w-16 h-16 rounded-full bg-green-600 flex items-center justify-center text-xl shadow-lg active:scale-90 transition"><i class="fa-solid fa-play"></i></button>
+            <button onclick="pauseTimer()" class="w-16 h-16 rounded-full bg-yellow-600 flex items-center justify-center text-xl shadow-lg active:scale-90 transition"><i class="fa-solid fa-pause"></i></button>
+            <button onclick="resetTimer()" class="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg active:scale-90 transition"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <button onclick="toggleTimerModal()" class="mt-12 text-gray-500 hover:text-white uppercase tracking-widest text-sm">Close Timer</button>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex flex-col justify-center items-center p-6 text-center">
+        <i class="fa-solid fa-dumbbell text-yellow-500 text-6xl mb-6 animate-bounce"></i>
+        <h2 class="text-3xl font-bold text-white mb-2">Heavy Session Done!</h2>
+        <p class="text-gray-400 mb-8">Get your 30g protein immediately.</p>
+        <p class="text-blue-400 text-sm mb-8">Next rotation loaded automatically.</p>
+        <button onclick="closeSuccessModal()" class="bg-white text-black font-bold py-3 px-8 rounded-full">Continue</button>
+    </div>
+
+    <script>
+        // --- DATA ---
+        // Updated for 20lb, 31lb, 40lb progression
+        const workouts = {
+            'A': {
+                title: "Push & Squat",
+                focus: "Shoulder Size & Leg Power",
+                exercises: [
+                    { 
+                        name: "Halo", 
+                        weight: "20 lb",
+                        sets: 3, 
+                        reps: "10 / side", 
+                        info: "Use the light bell to warmup shoulders. Tight core." 
+                    },
+                    { 
+                        name: "Goblet Squat", 
+                        weight: "40 lb",
+                        sets: 4, 
+                        reps: "10-12 reps", 
+                        info: "Use the Heavy Bell. Deep range of motion. No pulse needed, just heavy reps." 
+                    },
+                    { 
+                        name: "Single-Arm Floor Press", 
+                        weight: "31 lb or 40 lb",
+                        sets: 4, 
+                        reps: "8-10 / side", 
+                        info: "Try the 40lb. If you can't get 8 reps, drop to 31lb." 
+                    },
+                    { 
+                        name: "Overhead Carry", 
+                        weight: "31 lb",
+                        sets: 3, 
+                        reps: "45 sec", 
+                        info: "Go heavier now. Keep ribs tucked. 31lb is ideal for stability." 
+                    },
+                    { 
+                        name: "Strict Overhead Press", 
+                        weight: "31 lb",
+                        sets: 4, 
+                        reps: "6-8 / side", 
+                        info: "This is your main strength test. If you fail at 6, use leg drive (Push Press)." 
+                    },
+                    { 
+                        name: "Goblet Forward Lunge", 
+                        weight: "31 lb",
+                        sets: 3, 
+                        reps: "10 / leg", 
+                        info: "Hold the 31lb at chest. Control the knee tap." 
+                    }
+                ]
+            },
+            'B': {
+                title: "Pull & Hinge",
+                focus: "Back Thickness & Glute Power",
+                exercises: [
+                    { 
+                        name: "Around the World", 
+                        weight: "31 lb",
+                        sets: 3, 
+                        reps: "20 reps", 
+                        info: "Heavier weight demands tighter abs. Don't sway." 
+                    },
+                    { 
+                        name: "Single-Leg Deadlift", 
+                        weight: "31 lb",
+                        sets: 4, 
+                        reps: "10 / leg", 
+                        info: "Stick to 31lb for balance. If stable, try 40lb." 
+                    },
+                    { 
+                        name: "Single-Arm KB Row", 
+                        weight: "40 lb",
+                        sets: 4, 
+                        reps: "10-12 / side", 
+                        info: "Use the heavy bell. Your back can handle it. Pause at top." 
+                    },
+                    { 
+                        name: "KB Swing", 
+                        weight: "40 lb",
+                        sets: 5, 
+                        reps: "15-20 reps", 
+                        info: "Power! Snap hips hard. The 40lb bell should float for a second." 
+                    },
+                    { 
+                        name: "KB Pullover", 
+                        weight: "31 lb",
+                        sets: 4, 
+                        reps: "10-12 reps", 
+                        info: "Two hands on the 31lb bell. Stretch the lats." 
+                    },
+                    { 
+                        name: "Crush Grip Curl", 
+                        weight: "31 lb",
+                        sets: 4, 
+                        reps: "8-10 reps", 
+                        info: "Hold the 31lb ball with both palms (crush it). Slow curl." 
+                    }
+                ]
+            }
+        };
+
+        // --- STATE ---
+        let currentWorkoutId = localStorage.getItem('kb_last_workout') === 'A' ? 'B' : 'A';
+        let activeTimer = null;
+        let timeLeft = 60;
+        let originalTime = 60;
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderWorkout(currentWorkoutId);
+            updateTabs(currentWorkoutId);
+        });
+
+        // --- RENDER FUNCTIONS ---
+        function switchWorkout(id) {
+            currentWorkoutId = id;
+            renderWorkout(id);
+            updateTabs(id);
+        }
+
+        function updateTabs(activeId) {
+            document.getElementById('tab-A').className = activeId === 'A' 
+                ? "flex-1 py-3 text-center text-sm font-bold text-blue-400 border-b-2 border-blue-400 transition bg-gray-800/50"
+                : "flex-1 py-3 text-center text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-white transition";
+            
+            document.getElementById('tab-B').className = activeId === 'B' 
+                ? "flex-1 py-3 text-center text-sm font-bold text-blue-400 border-b-2 border-blue-400 transition bg-gray-800/50"
+                : "flex-1 py-3 text-center text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-white transition";
+        }
+
+        function renderWorkout(id) {
+            const container = document.getElementById('workout-container');
+            const data = workouts[id];
+            
+            let html = `
+                <div class="mb-4">
+                    <h2 class="text-2xl font-bold text-white">${data.title}</h2>
+                    <p class="text-sm text-blue-400">${data.focus}</p>
+                </div>
+            `;
+
+            data.exercises.forEach((ex, index) => {
+                html += `
+                    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-md">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-100 leading-tight">${ex.name}</h3>
+                                <div class="mt-1 mb-2">
+                                    <span class="weight-badge"><i class="fa-solid fa-weight-hanging mr-1"></i>${ex.weight}</span>
+                                </div>
+                            </div>
+                            <span class="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded font-mono">${ex.reps}</span>
+                        </div>
+                        
+                        <p class="text-xs text-gray-400 mb-3"><i class="fa-solid fa-circle-info mr-1"></i>${ex.info}</p>
+
+                        <div class="flex gap-3 mt-2">
+                            ${generateSetCircles(index, ex.sets)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            restoreSessionProgress();
+        }
+
+        function generateSetCircles(exIndex, count) {
+            let circles = '';
+            for(let i=0; i<count; i++) {
+                circles += `<button id="set-${exIndex}-${i}" onclick="toggleSet(${exIndex}, ${i})" class="set-circle w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-gray-500 font-bold text-sm bg-gray-900 hover:border-gray-500 focus:outline-none">${i+1}</button>`;
+            }
+            return circles;
+        }
+
+        function toggleSet(exIndex, setIndex) {
+            const btn = document.getElementById(`set-${exIndex}-${setIndex}`);
+            btn.classList.toggle('active');
+            
+            if(btn.classList.contains('active')) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                btn.classList.remove('bg-gray-900', 'border-gray-600', 'text-gray-500');
+                btn.classList.add('bg-blue-600', 'border-blue-600', 'text-white');
+                if (navigator.vibrate) navigator.vibrate(50);
+            } else {
+                btn.innerHTML = setIndex + 1;
+                btn.classList.add('bg-gray-900', 'border-gray-600', 'text-gray-500');
+                btn.classList.remove('bg-blue-600', 'border-blue-600', 'text-white');
+            }
+        }
+
+        // --- TIMER LOGIC ---
+        function toggleTimerModal() {
+            const modal = document.getElementById('timer-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function setTimer(seconds) {
+            pauseTimer();
+            timeLeft = seconds;
+            originalTime = seconds;
+            updateTimerDisplay();
+        }
+
+        function startTimer() {
+            if(activeTimer) return;
+            activeTimer = setInterval(() => {
+                if(timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    pauseTimer();
+                    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                    document.getElementById('main-timer').classList.add('text-red-500');
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(activeTimer);
+            activeTimer = null;
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timeLeft = originalTime;
+            document.getElementById('main-timer').classList.remove('text-red-500');
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const secs = (timeLeft % 60).toString().padStart(2, '0');
+            const timeString = `${mins}:${secs}`;
+            document.getElementById('main-timer').textContent = timeString;
+            document.getElementById('mini-timer-display').textContent = timeLeft > 0 ? timeString : "Done";
+        }
+
+        // --- COMPLETION LOGIC ---
+        function finishWorkout() {
+            localStorage.setItem('kb_last_workout', currentWorkoutId);
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+            const nextWorkout = currentWorkoutId === 'A' ? 'B' : 'A';
+            switchWorkout(nextWorkout);
+            window.scrollTo(0,0);
+        }
+
+        function resetProgress() {
+            if(confirm("Reset all progress?")) {
+                document.querySelectorAll('.set-circle').forEach(btn => {
+                    btn.classList.remove('active', 'bg-blue-600', 'border-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-900', 'border-gray-600', 'text-gray-500');
+                    btn.innerHTML = btn.id.split('-')[2] * 1 + 1; 
+                });
+            }
+        }
+
+        function restoreSessionProgress() {
+        }
+
+    </script>
+</body>
+</html>
